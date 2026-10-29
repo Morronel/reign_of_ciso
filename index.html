@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0d1321">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Reign of CISO: swipe left or right to keep the company secure, the budget alive, the board happy and your team sane. You can't win. You can only last.">
+  <title>Reign of CISO</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Title screen -->
+    <section id="screen-title" class="screen active">
+      <div class="title-wrap">
+        <div class="title-icon">🛡️</div>
+        <h1>REIGN<span>of</span>CISO</h1>
+        <p class="tagline">Keep the company secure.<br>Keep the budget alive.<br>Keep your job. <em>For a while.</em></p>
+        <button id="btn-start" class="btn">Accept the job offer</button>
+        <div id="title-stats" class="title-stats"></div>
+        <button id="btn-endings" class="btn btn-ghost">Endings</button>
+      </div>
+    </section>
+
+    <!-- Game screen -->
+    <section id="screen-game" class="screen">
+      <header class="meters" id="meters">
+        <div class="meter" data-k="b"><div class="dot"></div><div class="icon"><div class="fill"></div><span>💰</span></div><label>Budget</label></div>
+        <div class="meter" data-k="s"><div class="dot"></div><div class="icon"><div class="fill"></div><span>🛡️</span></div><label>Security</label></div>
+        <div class="meter" data-k="t"><div class="dot"></div><div class="icon"><div class="fill"></div><span>🎩</span></div><label>Board</label></div>
+        <div class="meter" data-k="m"><div class="dot"></div><div class="icon"><div class="fill"></div><span>🙂</span></div><label>Morale</label></div>
+      </header>
+
+      <div class="question" id="question"></div>
+
+      <div class="stage" id="stage">
+        <div class="card-back"></div>
+        <div class="card" id="card">
+          <div class="choice choice-left" id="choice-left"></div>
+          <div class="choice choice-right" id="choice-right"></div>
+          <div class="portrait" id="portrait"></div>
+        </div>
+      </div>
+
+      <div class="who">
+        <div class="who-name" id="who-name"></div>
+        <div class="who-role" id="who-role"></div>
+      </div>
+
+      <footer class="footer">
+        <div class="hint" id="hint">◀ swipe ▶</div>
+        <div class="tenure"><span id="ciso-name"></span> · <strong id="tenure"></strong></div>
+      </footer>
+    </section>
+
+    <!-- Game over -->
+    <section id="screen-over" class="screen">
+      <div class="over-wrap">
+        <div class="over-label">YOU'RE FIRED</div>
+        <div class="over-emoji" id="over-emoji"></div>
+        <h2 id="over-title"></h2>
+        <p id="over-text"></p>
+        <div class="over-stats" id="over-stats"></div>
+        <button id="btn-again" class="btn">Hire the next CISO</button>
+        <button id="btn-share" class="btn btn-ghost">Share</button>
+        <button id="btn-menu" class="btn btn-ghost">Main menu</button>
+      </div>
+    </section>
+
+    <!-- Endings gallery -->
+    <section id="screen-endings" class="screen">
+      <div class="endings-wrap">
+        <h2>Ways to get fired</h2>
+        <p class="muted" id="endings-count"></p>
+        <div class="endings-grid" id="endings-grid"></div>
+        <button id="btn-endings-back" class="btn btn-ghost">Back</button>
+      </div>
+    </section>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="js/cards.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
