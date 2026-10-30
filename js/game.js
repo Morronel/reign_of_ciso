@@ -1,10 +1,8 @@
 (function () {
   'use strict';
 
-  const { CHARACTERS, CARDS, ENDINGS } = window.REIGN;
-  const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+  const MODES = window.REIGN_MODES;
   const METERS = ['b', 's', 't', 'm'];
-  const METER_NAMES = { b: 'Budget', s: 'Security', t: 'Board trust', m: 'Morale' };
   const MAX = 100;
   const START = 50;
   const RECENT_LIMIT = 20;
@@ -12,22 +10,46 @@
   const SWIPE_PREVIEW = 30;
   const STORAGE_KEY = 'reign-of-ciso.v1';
 
-  const FIRST = ['Alex', 'Sam', 'Jordan', 'Morgan', 'Casey', 'Riley', 'Taylor', 'Jamie', 'Robin', 'Dana', 'Avery', 'Quinn', 'Kai', 'Sasha', 'Nikita', 'Charlie', 'Ari', 'Remy'];
-  const EPITHET = ['the Patched', 'the Unpatched', 'Zero-Day', 'the Firewall', 'the Compliant', 'the Auditable', 'MFA', 'the Phished', 'the Paranoid', 'the Encrypted', 'Two-Factor', 'the Hashed', 'the Salted', 'the Sandboxed', 'Least-Privilege', 'the Logged', 'the Air-Gapped', 'Root'];
-
   // ---------- Persistence ----------
+  const blankStats = () => ({ best: 0, cisoCount: 0, endings: {}, prevName: null, prevWeeks: 0, run: null });
   const store = {
-    data: { best: 0, cisoCount: 0, endings: {}, prevName: null, prevWeeks: 0, run: null },
+    data: { mode: 'casual', modes: {} },
     load() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) Object.assign(this.data, JSON.parse(raw));
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (saved.modes) {
+          Object.assign(this.data, saved);
+        } else {
+          // Saves from before modes existed belong to the casual deck.
+          this.data.modes.casual = Object.assign(blankStats(), saved);
+        }
       } catch (e) { /* storage unavailable: play without saving */ }
     },
     save() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data)); } catch (e) { /* ignore */ }
     },
   };
+
+  // ---------- Mode ----------
+  let mode = null;
+  let CARD_BY_ID = {};
+
+  function stats() {
+    const all = store.data.modes;
+    if (!all[mode.id]) all[mode.id] = blankStats();
+    return all[mode.id];
+  }
+
+  function setMode(id) {
+    mode = MODES[id] || MODES.casual;
+    CARD_BY_ID = Object.fromEntries(mode.cards.map((c) => [c.id, c]));
+    store.data.mode = mode.id;
+    // Drop a saved run if its current card no longer exists (deck changed between versions).
+    const d = stats();
+    if (d.run && !CARD_BY_ID[d.run.current]) d.run = null;
+  }
 
   // ---------- DOM ----------
   const $ = (id) => document.getElementById(id);
@@ -77,11 +99,11 @@
   let busy = false;
 
   function newRun() {
-    const d = store.data;
+    const d = stats();
     d.cisoCount += 1;
     run = {
       cisoNo: d.cisoCount,
-      name: `${pick(FIRST)} ${pick(EPITHET)}`,
+      name: `${pick(mode.firstNames)} ${pick(mode.epithets)}`,
       prevName: d.prevName,
       prevWeeks: d.prevWeeks,
       m: { b: START, s: START, t: START, m: START },
@@ -112,13 +134,13 @@
       if (id) return id;
     }
 
-    const pool = CARDS.filter((c) =>
+    const pool = mode.cards.filter((c) =>
       !c.followup &&
       !(c.once && run.used.includes(c.id)) &&
       !run.recent.includes(c.id) &&
       eligible(c));
     // If we somehow exhausted the pool, forget recent history.
-    const candidates = pool.length ? pool : CARDS.filter((c) => !c.followup && !c.once && eligible(c));
+    const candidates = pool.length ? pool : mode.cards.filter((c) => !c.followup && !c.once && eligible(c));
     const total = candidates.reduce((sum, c) => sum + (c.weight || 1), 0);
     let r = Math.random() * total;
     for (const c of candidates) {
@@ -128,7 +150,11 @@
     return candidates[candidates.length - 1].id;
   }
 
-  function currentCard() { return CARD_BY_ID[run.current]; }
+  // Cards are randomly mirrored so the sensible answer isn't always on the same side.
+  function currentCard() {
+    const card = CARD_BY_ID[run.current];
+    return run.flip ? { ...card, l: card.r, r: card.l } : card;
+  }
 
   function checkEnd() {
     for (const k of METERS) {
@@ -156,6 +182,15 @@
     asList(choice.clear).forEach((f) => { run.flags = run.flags.filter((x) => x !== f); });
     if (choice.next) run.scheduled.push({ ids: asList(choice.next), at: run.week + 1 + (choice.delay ?? 3) });
 
+    if (card.best) {
+      // `side` is what the player saw; undo the mirroring to compare with the deck.
+      const picked = run.flip ? (side === 'l' ? 'r' : 'l') : side;
+      run.calls = run.calls || { sound: 0, total: 0, missed: [] };
+      run.calls.total += 1;
+      if (picked === card.best) run.calls.sound += 1;
+      else run.calls.missed.push(card.id);
+    }
+
     if (card.once) run.used.push(card.id);
     run.recent.push(card.id);
     if (run.recent.length > RECENT_LIMIT) run.recent.shift();
@@ -169,13 +204,13 @@
       const meter = el.meters[k];
       meter.querySelector('.fill').style.height = `${v}%`;
       meter.classList.toggle('danger', v <= 20 || v >= 80);
-      meter.setAttribute('aria-label', `${METER_NAMES[k]}: ${v} of ${MAX}`);
+      meter.setAttribute('aria-label', `${mode.meters[k].name}: ${v} of ${MAX}`);
     });
   }
 
   function renderCard() {
     const card = currentCard();
-    const who = CHARACTERS[card.who];
+    const who = mode.characters[card.who];
     el.question.textContent = typeof card.text === 'function' ? card.text(run) : card.text;
     el.portrait.textContent = who.emoji;
     el.card.style.background = `radial-gradient(circle at 50% 35%, ${who.color}, ${shade(who.color)} 85%)`;
@@ -216,6 +251,11 @@
   // ---------- Game flow ----------
   function startGame(fresh) {
     if (fresh || !run) newRun();
+    METERS.forEach((k) => {
+      el.meters[k].querySelector('.icon span').textContent = mode.meters[k].icon;
+      el.meters[k].querySelector('label').textContent = mode.meters[k].name;
+    });
+    el.screens.game.dataset.mode = mode.id;
     renderMeters();
     enterCard();
     setPreview(null);
@@ -244,13 +284,14 @@
       return;
     }
     run.current = drawCard();
+    run.flip = Math.random() < 0.5;
     store.save();
     setTimeout(() => { enterCard(); busy = false; }, 320);
   }
 
   function gameOver(key) {
-    const d = store.data;
-    const e = ENDINGS[key];
+    const d = stats();
+    const e = mode.endings[key];
     const weeks = run.week;
     const isNewEnding = !d.endings[key];
     const isBest = weeks > d.best;
@@ -269,15 +310,59 @@
       CISO #${run.cisoNo} <strong>${run.name}</strong><br>
       Tenure: <strong>${formatTenure(weeks)}</strong>${isBest ? ' <span class="new">NEW RECORD</span>' : ''}<br>
       Best tenure: <strong>${formatTenure(d.best)}</strong><br>
-      Endings found: <strong>${found}/${Object.keys(ENDINGS).length}</strong>${isNewEnding ? ' <span class="new">NEW</span>' : ''}`;
+      Endings found: <strong>${found}/${Object.keys(mode.endings).length}</strong>${isNewEnding ? ' <span class="new">NEW</span>' : ''}`;
+    renderDebrief(run.calls);
     show('over');
     gameOver.last = { title: e.title, weeks };
     run = null;
     busy = false;
   }
 
+  // Realistic decks mark the sound call on each card; show how the run measured up.
+  function renderDebrief(calls) {
+    const box = $('over-debrief');
+    box.innerHTML = '';
+    box.hidden = !calls || !calls.total;
+    if (box.hidden) return;
+    const head = document.createElement('div');
+    head.className = 'debrief-head';
+    head.innerHTML = `Sound calls: <strong>${calls.sound} of ${calls.total}</strong>`;
+    box.appendChild(head);
+    calls.missed.slice(-3).reverse().forEach((id) => {
+      const card = CARD_BY_ID[id];
+      const text = typeof card.text === 'function' ? '' : card.text;
+      const item = document.createElement('div');
+      item.className = 'debrief-item';
+      const q = document.createElement('div');
+      q.className = 'debrief-q';
+      q.textContent = text.length > 110 ? `${text.slice(0, 107)}...` : text;
+      const a = document.createElement('div');
+      a.className = 'debrief-a';
+      a.textContent = `Better call: ${card[card.best].t}`;
+      item.append(q, a);
+      box.appendChild(item);
+    });
+  }
+
   function renderTitle() {
-    const d = store.data;
+    const d = stats();
+    const picker = $('mode-picker');
+    picker.innerHTML = '';
+    Object.values(MODES).forEach((m) => {
+      const b = document.createElement('button');
+      b.className = `mode${m.id === mode.id ? ' selected' : ''}`;
+      b.setAttribute('aria-pressed', String(m.id === mode.id));
+      b.innerHTML = `<span class="mode-label">${m.label}</span><span class="mode-setting">${m.setting}</span>`;
+      b.addEventListener('click', () => {
+        setMode(m.id);
+        store.save();
+        renderTitle();
+      });
+      picker.appendChild(b);
+    });
+    $('mode-blurb').textContent = mode.blurb;
+    $('tagline').innerHTML = mode.tagline.join('<br>');
+
     const btn = $('btn-start');
     if (d.run) {
       btn.textContent = `Back to work (week ${d.run.week + 1})`;
@@ -286,31 +371,32 @@
     }
     const found = Object.keys(d.endings).length;
     $('title-stats').innerHTML = d.cisoCount
-      ? `CISOs fired: ${d.cisoCount - (d.run ? 1 : 0)}<br>Best tenure: ${formatTenure(d.best)}<br>Endings: ${found}/${Object.keys(ENDINGS).length}`
-      : 'Average CISO tenure is about 2 years.<br>Let\'s see how you do.';
+      ? `CISOs fired: ${d.cisoCount - (d.run ? 1 : 0)}<br>Best tenure: ${formatTenure(d.best)}<br>Endings: ${found}/${Object.keys(mode.endings).length}`
+      : mode.tenureHint;
     show('title');
   }
 
   function renderEndings() {
-    const d = store.data;
+    const d = stats();
     const grid = $('endings-grid');
     grid.innerHTML = '';
-    Object.entries(ENDINGS).forEach(([key, e]) => {
+    Object.entries(mode.endings).forEach(([key, e]) => {
       const got = d.endings[key];
-      const how = `${METER_NAMES[key[0]]} ${key[1] === '0' ? 'hits zero' : 'maxes out'}`;
+      const how = `${mode.meters[key[0]].name} ${key[1] === '0' ? 'hits zero' : 'maxes out'}`;
       const div = document.createElement('div');
       div.className = `ending${got ? '' : ' locked'}`;
       div.innerHTML = `<div class="e-emoji">${e.emoji}</div><div class="e-title">${got ? e.title : '???'}</div><div class="e-how">${how}</div>`;
       grid.appendChild(div);
     });
-    $('endings-count').textContent = `${Object.keys(d.endings).length} of ${Object.keys(ENDINGS).length} discovered`;
+    $('endings-title').textContent = `Ways to get fired: ${mode.label}`;
+    $('endings-count').textContent = `${Object.keys(d.endings).length} of ${Object.keys(mode.endings).length} discovered`;
     show('endings');
   }
 
   async function share() {
     const last = gameOver.last;
     const text = last
-      ? `I lasted ${formatTenure(last.weeks)} as CISO before "${last.title}". Can you do better?`
+      ? `I lasted ${formatTenure(last.weeks)} as ${mode.setting} before "${last.title}". Can you do better?`
       : 'Can you survive as a CISO?';
     const url = location.href.split('#')[0];
     try {
@@ -402,8 +488,8 @@
 
   // ---------- Buttons ----------
   $('btn-start').addEventListener('click', () => {
-    if (store.data.run) {
-      run = store.data.run;
+    if (stats().run) {
+      run = stats().run;
       startGame(false);
     } else {
       startGame(true);
@@ -417,8 +503,7 @@
 
   // ---------- Boot ----------
   store.load();
-  // Drop a saved run if its current card no longer exists (deck changed between versions).
-  if (store.data.run && !CARD_BY_ID[store.data.run.current]) store.data.run = null;
+  setMode(store.data.mode);
   renderTitle();
 
   // Expose a tiny hook for automated testing.

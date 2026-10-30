@@ -1,24 +1,10 @@
 /*
- * Reign of CISO: characters, cards and endings.
- *
- * Meters: b = budget, s = security posture, t = board trust, m = team morale.
- * Each card has a left (l) and right (r) choice. A choice can have:
- *   t      label shown while swiping
- *   fx     meter changes, e.g. { b: -10, s: 5 }
- *   set    flag(s) to set for the rest of this run
- *   clear  flag(s) to clear
- *   next   follow-up card id (or list of ids; the first whose requirements pass is used)
- *   delay  weeks until the follow-up shows up (default 3)
- * Card options:
- *   followup  only appears when scheduled by a `next`
- *   once      appears at most once per run
- *   requires  flags that must be set / excludes flags that must not be set
- *   cond      function(state) => boolean for meter-based cards
- *   weight    relative draw chance (default 1)
+ * Casual mode: CISO (and the entire security team) at a small, scrappy startup.
+ * Card format is documented in js/modes/README.md.
  */
 (function () {
   const CHARACTERS = {
-    ceo: { name: 'Chad', role: 'CEO', emoji: '🤵', color: '#3b5b92' },
+    ceo: { name: 'Chad', role: 'CEO & Co-founder', emoji: '🤵', color: '#3b5b92' },
     cfo: { name: 'Penny', role: 'CFO', emoji: '👩‍💼', color: '#2e7d5b' },
     it: { name: 'Gary', role: 'IT Director', emoji: '🧔', color: '#6b5b95' },
     soc: { name: 'Priya', role: 'SOC Lead', emoji: '🎧', color: '#b5651d' },
@@ -31,7 +17,7 @@
     legal: { name: 'Lawrence', role: 'General Counsel', emoji: '⚖️', color: '#707b7c' },
     red: { name: 'Red Team', role: 'Pentesters', emoji: '🥷', color: '#8e1b1b' },
     hacker: { name: 'Unknown Sender', role: 'definitely-legit@totally.ru', emoji: '💀', color: '#1b1b1b' },
-    board: { name: 'The Board', role: 'Board of Directors', emoji: '🎩', color: '#5a4632' },
+    board: { name: 'The Board', role: 'Board (mostly VCs)', emoji: '🎩', color: '#5a4632' },
     press: { name: 'Jenna', role: 'Tech Journalist', emoji: '📰', color: '#34495e' },
     ai: { name: 'CopilotGPT', role: 'AI Assistant (Beta)', emoji: '🤖', color: '#138d75' },
     cat: { name: 'Firewall', role: 'Office Cat', emoji: '🐈', color: '#a0522d' },
@@ -45,8 +31,8 @@
     {
       id: 'welcome', who: 'ceo', followup: true,
       text: (st) => st.cisoNo === 1
-        ? "Welcome aboard! Your predecessor \"left to pursue other opportunities.\" Swipe left or right to make decisions. Keep all four meters balanced. Don't let any hit empty... or max out."
-        : `Welcome, CISO #${st.cisoNo}! ${st.prevName} lasted ${st.prevWeeks} week${st.prevWeeks === 1 ? '' : 's'}. No pressure.`,
+        ? "Welcome to the rocket ship! We just closed our Series A and you're our first CISO. Your predecessor was a Google Doc called 'security stuff'. Swipe left or right to decide. Keep all four meters balanced: don't let any hit empty... or max out."
+        : `Welcome, CISO #${st.cisoNo}! We pivoted twice since ${st.prevName} left. They lasted ${st.prevWeeks} week${st.prevWeeks === 1 ? '' : 's'}. No pressure.`,
       l: { t: 'Gulp.' },
       r: { t: "Let's secure things." },
     },
@@ -735,5 +721,24 @@
     },
   };
 
-  window.REIGN = { CHARACTERS, CARDS, ENDINGS };
+  window.REIGN_MODES = window.REIGN_MODES || {};
+  window.REIGN_MODES.casual = {
+    id: 'casual',
+    label: 'Casual',
+    setting: 'CISO at a small startup',
+    blurb: 'Series A, 40 employees, one office cat. Chaotic, silly, forgiving.',
+    tagline: ['Keep the startup secure.', 'Keep the runway alive.', 'Keep your job. <em>For a while.</em>'],
+    meters: {
+      b: { name: 'Budget', icon: '💰' },
+      s: { name: 'Security', icon: '🛡️' },
+      t: { name: 'Board', icon: '🎩' },
+      m: { name: 'Morale', icon: '🙂' },
+    },
+    firstNames: ['Alex', 'Sam', 'Jordan', 'Morgan', 'Casey', 'Riley', 'Taylor', 'Jamie', 'Robin', 'Dana', 'Avery', 'Quinn', 'Kai', 'Sasha', 'Nikita', 'Charlie', 'Ari', 'Remy'],
+    epithets: ['the Patched', 'the Unpatched', 'Zero-Day', 'the Firewall', 'the Compliant', 'the Auditable', 'MFA', 'the Phished', 'the Paranoid', 'the Encrypted', 'Two-Factor', 'the Hashed', 'the Salted', 'the Sandboxed', 'Least-Privilege', 'the Logged', 'the Air-Gapped', 'Root'],
+    tenureHint: "Average CISO tenure is about 2 years.<br>Let's see how you do.",
+    characters: CHARACTERS,
+    cards: CARDS,
+    endings: ENDINGS,
+  };
 })();
