@@ -1,8 +1,15 @@
 # Reign of CISO 🛡️
 
-A Reigns-style swipe game where you're the CISO. Swipe left or right on decisions from the CEO, the CFO, the SOC, the intern, a very persistent vendor and the office cat.
+A Reigns-style swipe game where you're the CISO. Swipe left or right on the decisions that land on your desk.
 
-Keep four meters alive:
+## Modes
+
+- **Casual: CISO at a small startup.** Series A, 40 people, a very persistent vendor, the CEO's nephew and the office cat. Silly and forgiving.
+- **Realistic: Group CISO at a large European bank.** ECB-supervised, DORA in force. Major-incident reporting clocks, TLPT, the Register of Information, third-party contracts, SWIFT CSP, GDPR, works councils and ransomware. The obvious answer is often wrong, and many cheap shortcuts come back weeks later as supervisory findings or incidents. Meters: Budget, Resilience, Supervisor and Business.
+
+Each mode keeps its own best tenure, endings and saved run. Cards are randomly mirrored, so the sensible answer isn't always on the same side.
+
+Casual meters:
 
 | | Meter | Hits zero | Maxes out |
 |---|---|---|---|
@@ -31,7 +38,7 @@ python3 -m http.server 8000
 
 ## Adding cards
 
-All content lives in `js/cards.js`. A card looks like:
+Each mode lives in its own file in `js/modes/` (format documented in `js/modes/README.md`). A card looks like:
 
 ```js
 {
@@ -42,4 +49,4 @@ All content lives in `js/cards.js`. A card looks like:
 }
 ```
 
-`fx` keys are `b` (budget), `s` (security), `t` (board trust) and `m` (morale). Choices can also `set` flags and schedule a follow-up card with `next` and `delay`; see the comment at the top of the file. Run `node tools/check-cards.js` to validate the deck.
+`fx` keys are `b` (budget), `s` (security), `t` (board trust) and `m` (morale). Choices can also `set` flags and schedule a follow-up card with `next` and `delay`; see `js/modes/README.md`. Run `node tools/check-cards.js` to validate every deck.

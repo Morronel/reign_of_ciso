@@ -18,7 +18,9 @@
       <div class="title-wrap">
         <div class="title-icon">🛡️</div>
         <h1>REIGN<span>of</span>CISO</h1>
-        <p class="tagline">Keep the company secure.<br>Keep the budget alive.<br>Keep your job. <em>For a while.</em></p>
+        <p class="tagline" id="tagline"></p>
+        <div class="mode-picker" id="mode-picker" role="group" aria-label="Game mode"></div>
+        <p class="mode-blurb" id="mode-blurb"></p>
         <button id="btn-start" class="btn">Accept the job offer</button>
         <div id="title-stats" class="title-stats"></div>
         <button id="btn-endings" class="btn btn-ghost">Endings</button>
@@ -64,6 +66,7 @@
         <h2 id="over-title"></h2>
         <p id="over-text"></p>
         <div class="over-stats" id="over-stats"></div>
+        <div class="debrief" id="over-debrief" hidden></div>
         <button id="btn-again" class="btn">Hire the next CISO</button>
         <button id="btn-share" class="btn btn-ghost">Share</button>
         <button id="btn-menu" class="btn btn-ghost">Main menu</button>
@@ -73,7 +76,7 @@
     <!-- Endings gallery -->
     <section id="screen-endings" class="screen">
       <div class="endings-wrap">
-        <h2>Ways to get fired</h2>
+        <h2 id="endings-title">Ways to get fired</h2>
         <p class="muted" id="endings-count"></p>
         <div class="endings-grid" id="endings-grid"></div>
         <button id="btn-endings-back" class="btn btn-ghost">Back</button>
@@ -83,7 +86,8 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="js/cards.js"></script>
+  <script src="js/modes/casual.js"></script>
+  <script src="js/modes/realistic.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>
