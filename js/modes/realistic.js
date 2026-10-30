@@ -626,7 +626,7 @@
     },
     firstNames: ['Anna', 'Lars', 'Chiara', 'Mateusz', 'Sophie', 'Jan', 'Elif', 'Pierre', 'Katja', 'Diego', 'Inês', 'Niklas', 'Aino', 'Radu', 'Eva', 'Tomás', 'Hanna', 'Luca'],
     epithets: ['(CISSP)', '(CISSP, CISM)', '(ex-Big Four)', '(ex-regulator)', '(ex-military)', '(CRISC)', '(ex-SOC analyst)', '(PhD)', '(interim)', '(CISSP, CCSP)'],
-    tenureHint: 'Bank CISOs face supervisors, auditors and attackers at once.<br>Expertise helps. Luck helps more.',
+    tenureHint: 'Bank CISOs answer to supervisors, auditors and attackers at once.<br>Sound calls keep you alive. So does balance.',
     characters: CHARACTERS,
     cards: CARDS,
     endings: ENDINGS,
